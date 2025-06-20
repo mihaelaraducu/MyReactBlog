@@ -77,10 +77,14 @@ export const findOne = (postId: number, callback: Function) => {
   const queryString = `SELECT * FROM posts AS p INNER JOIN categories AS c ON p.categorie_id = c.id WHERE p.id=?`;
   db.query(queryString, postId, (err, result) => {
     if (err) {
-      callback(err);
+      return callback(err);
     }
 
     const row = (<RowDataPacket>result)[0];
+    if (!row) {
+      return callback(null, null); // Return null dacă nu există date
+    }
+
     const post: Post = {
       id: row.id,
       titlu: row.titlu,
@@ -89,13 +93,11 @@ export const findOne = (postId: number, callback: Function) => {
       user_id: row.user_id,
       dataadaugare: row.dataadaugare,
       poza: row.poza,
-      categorie_nume:row.nume
-     
+      categorie_nume: row.nume,
     };
     callback(null, post);
   });
 };
-
 // create post
 export const addPost = (post: Post, callback: Function) => {
   const queryString =

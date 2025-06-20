@@ -29,10 +29,14 @@ export const findOne = (userId: number, callback: Function) => {
   const queryString = `SELECT * FROM users WHERE id=?`;
   db.query(queryString, userId, (err, result) => {
     if (err) {
-      callback(err);
+      return callback(err);
     }
 
     const row = (<RowDataPacket>result)[0];
+    if (!row) {
+      return callback(null, null); // Return null dacă nu există date
+    }
+
     const user: User = {
       id: row.id,
       nume: row.nume,

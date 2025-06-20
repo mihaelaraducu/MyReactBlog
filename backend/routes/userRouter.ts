@@ -33,9 +33,12 @@ userRouter.get("/:id", async (req: Request, res: Response) => {
     return;
   }
   const userId: number = Number(req.params.id);
-  userModel.findOne(userId, (err: Error, user: User) => {
+  userModel.findOne(userId, (err: Error, user: User | null) => {
     if (err) {
-      return res.status(500).json({ message: err.message });
+      return res.status(500).json({ errorMessage: err.message });
+    }
+    if (!user) {
+      return res.status(404).json({ message: `Utilizatorul cu ID-ul ${userId} nu a fost găsit.` });
     }
     res.status(200).json({ data: user });
   });
