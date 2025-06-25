@@ -69,6 +69,32 @@ postRouter.post("/",jsonParser, async (req: Request, res: Response) => {
     res.status(200).json({"message": 'Datele au fost introduse cu succes'});
   });
 });
+// Edit user
+postRouter.put("/:id",jsonParser, async (req: Request, res: Response) => {
+  let fileToUpload:any;
+  let uploadPath;
+  fileToUpload = req.files!.poza as UploadedFile;
+  const newFileName = `${Date.now()}_${fileToUpload.name}`;
+  uploadPath = path.join(__dirname, '..', 'uploads', newFileName);
+
+  fileToUpload.mv(uploadPath);
+
+
+  const post: Post = req.body;
+  post['poza'] = newFileName;
+  
+  console.log(req.body);
+  postModel.update(post, (err: Error) => {
+    if (err) {
+      return res.status(500).json({"message": err.message});
+    }
+
+    // res.status(200).send();
+    res.status(200).json({
+      "message": 'success'
+      });
+  })
+});
 
 
 

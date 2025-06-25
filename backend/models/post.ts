@@ -128,3 +128,14 @@ export const addPost = (post: Post, callback: Function) => {
     callback(error);
   }
 };
+// Edit user
+export const update = (post: Post, callback: Function) => {
+  const queryString = `UPDATE post SET titlu=?, continut=?, poza=?, categorie_id=? WHERE id=?`;
+
+  db.query(queryString, [post.titlu, post.continut, post.poza, post.categorie_id, post.id], (err, result) => {
+    if (err) {
+      callback(err);
+    }
+    callback(null);
+  });
+};
