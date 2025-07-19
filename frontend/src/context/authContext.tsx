@@ -28,7 +28,7 @@ export const AuthContextProvider = ({ children }: AuthProviderProps) => {
   );
 
  const login = async (inputs: LoginInputs) => {
-    const res = await axios.post(USERS_URL + "veifyLogin", inputs);
+    const res = await axios.post(USERS_URL + "verifyLogin", inputs);
     setCurrentUser(res.data);
     localStorage.setItem("user", JSON.stringify(res.data));
     setAuthenticated(true);

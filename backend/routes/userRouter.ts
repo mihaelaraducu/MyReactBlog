@@ -2,7 +2,7 @@ import express, { Request, Response, Router } from "express";
 import * as bodyParser from "body-parser";
 
 import * as userModel from "../models/user";
-import { User } from "../types/User";
+import { PublicUser, User } from "../types/User";
 import { check, validationResult } from "express-validator";
 import { generateToken, verifyToken } from "../jwt";
 
@@ -10,13 +10,13 @@ const userRouter: Router = express.Router();
 var jsonParser = bodyParser.json();
 
 userRouter.get("/", async (req: Request, res: Response) => {
-  if (!verifyToken(req, res)) {
-    res.status(403).json({
-      message: "<b>Trebue sa fi logat pentru a accesa aceasta zona!<b>",
-    });
-    return;
-  }
-  userModel.findAll((err: Error, users: User[]) => {
+  // if (!verifyToken(req, res)) {
+  //   res.status(403).json({
+  //     message: "<b>Trebue sa fi logat pentru a accesa aceasta zona!<b>",
+  //   });
+  //   return;
+  // }
+  userModel.findAll((err: Error, users: PublicUser[]) => {
     if (err) {
       return res.status(500).json({ errorMessage: err.message });
     }
@@ -26,12 +26,12 @@ userRouter.get("/", async (req: Request, res: Response) => {
 });
 
 userRouter.get("/:id", async (req: Request, res: Response) => {
-  if (!verifyToken(req, res)) {
-    res.status(403).json({
-      message: "<b>Trebue sa fi logat pentru a accesa aceasta zona!<b>",
-    });
-    return;
-  }
+  // if (!verifyToken(req, res)) {
+  //   res.status(403).json({
+  //     message: "<b>Trebue sa fi logat pentru a accesa aceasta zona!<b>",
+  //   });
+  //   return;
+  // }
   const userId: number = Number(req.params.id);
   userModel.findOne(userId, (err: Error, user: User | null) => {
     if (err) {
@@ -48,18 +48,17 @@ userRouter.post(
   "/",
   jsonParser,
   [
-    check("nume", "Name is requied").not().isEmpty(),
-    check("prenume", "Name is requied").not().isEmpty(),
+    check("name", "Name is requied").not().isEmpty(),
     check("email", "Please include a valid email")
       .isEmail()
       .normalizeEmail({ gmail_remove_dots: true }),
-    check("parola", "Password must be 8 or more characters").matches(
+    check("password", "Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*).").matches(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/,
       "i"
     ),
   ],
   async (req: Request, res: Response) => {
-    //console.log(req.body);
+    console.log(req.body);
     const errors = validationResult(req);
     //console.log(errors);
     if (!errors.isEmpty()) {
@@ -103,12 +102,12 @@ userRouter.put("/:id", jsonParser, async (req: Request, res: Response) => {
 });
 // Delete user
 userRouter.delete("/:id", jsonParser, async (req: Request, res: Response) => {
-  if (!verifyToken(req, res)) {
-    res.status(403).json({
-      message: "<b>Trebue sa fi logat pentru a accesa aceasta zona!<b>",
-    });
-    return;
-  }
+  // if (!verifyToken(req, res)) {
+  //   res.status(403).json({
+  //     message: "<b>Trebue sa fi logat pentru a accesa aceasta zona!<b>",
+  //   });
+  //   return;
+  // }
   const userId: number = Number(req.params.id);
   console.log(userId);
   userModel.deleteUser(userId, (err: Error) => {
@@ -123,33 +122,32 @@ userRouter.delete("/:id", jsonParser, async (req: Request, res: Response) => {
   });
 });
 userRouter.post(
-  "/veifyLogin",
+  "/verifyLogin",
   jsonParser,
   async (req: Request, res: Response) => {
-    console.log(req.body);
     const loginUser: User = req.body;
-    userModel.veifyPassword(loginUser, (err: Error, user: User) => {
+
+    userModel.verifyPassword(loginUser, (err: Error, user: User) => {
       if (err) {
         return res.status(401).send({
           accessToken: null,
           message: err.message,
         });
-        //return res.status(500).json({"message": err.message});
       }
-      var token = generateToken();
-      console.log("JWT", token);
-      //res.status(200).json({"message": 'success'});
+
+      const token = generateToken();
+
       res.status(200).send({
         id: user.id,
-        nume: user.nume,
-        prenume: user.prenume,
+        name: user.name,
         email: user.email,
-        roles: "ADMIN",
+        role: user.role || "customer",
         accessToken: token,
       });
     });
   }
 );
+
 userRouter.post("/logout", async (req: Request, res: Response) => {
   res.status(200).json({
     accessToken: null,
@@ -157,5 +155,36 @@ userRouter.post("/logout", async (req: Request, res: Response) => {
   });
   return;
 });
+userRouter.post("/changePassword", jsonParser, async (req: Request, res: Response) => {
+  const { email, password, new_password } = req.body;
+
+  if (!email || !password || !new_password) {
+    res.status(400).json({ message: "All fields are required." });
+    return;
+  }
+
+  userModel.changePassword(email, password, new_password, (err, message) => {
+    if (err) {
+      res.status(500).json({ message: "Error updating password." });
+      return;
+    }
+
+    if (message === "Invalid current password.") {
+      res.status(401).json({ message });
+      MediaElementAudioSourceNode;
+    }
+
+    if (message === "User not found.") {
+      res.status(404).json({ message });
+      return;
+    }
+
+    res.status(200).json({ message });
+    return;
+  });
+});
+
+
+
 
 export { userRouter };
